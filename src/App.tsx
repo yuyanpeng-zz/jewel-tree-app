@@ -1,16 +1,17 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
-// @ts-ignore
+
+// 由于有了 src/vite-env.d.ts，这里不再需要 @ts-ignore
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
-// @ts-ignore
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
-// @ts-ignore
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
-// @ts-ignore
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
-// Fix: Use 'type' import for types
-import { FilesetResolver, HandLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
-import { LogicData, AppState, type HandPosition } from './types';
+
+// 修复: 使用 import type 分离类型和值的导入，解决 TS1484 错误
+import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
+import type { NormalizedLandmark } from '@mediapipe/tasks-vision';
+
+import { type LogicData, AppState, type HandPosition } from './types';
 import { Camera, RefreshCcw, Hand, Upload, Loader2, Info } from 'lucide-react';
 
 const CONFIG = {
@@ -66,7 +67,7 @@ const App: React.FC = () => {
   const initThree = useCallback(() => {
     if (!mountRef.current) return;
     
-    // If renderer exists, we just resize and return to support Strict Mode re-mounts
+    // Check if renderer already exists
     if (rendererRef.current) {
         const w = window.innerWidth;
         const h = window.innerHeight;
@@ -146,17 +147,18 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleResize = () => {
       if (!cameraRef.current || !rendererRef.current || !composerRef.current) return;
-      cameraRef.current.aspect = window.innerWidth / window.innerHeight;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      cameraRef.current.aspect = w / h;
       cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(window.innerWidth, window.innerHeight);
-      composerRef.current.setSize(window.innerWidth, window.innerHeight);
+      rendererRef.current.setSize(w, h);
+      composerRef.current.setSize(w, h);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const createJewels = (group: THREE.Group) => {
-    // Check if data already exists to prevent duplication on re-init
     if (logicDataRef.current.gold.length > 0) return;
 
     const mats = {
@@ -253,7 +255,6 @@ const App: React.FC = () => {
 
   // --- Animation Loop ---
   const animate = useCallback(() => {
-    // Safety check: if renderer is gone (cleanup), stop loop
     if (!composerRef.current || !mainGroupRef.current || !rendererRef.current) return;
 
     timeRef.current += 0.01;
@@ -386,7 +387,6 @@ const App: React.FC = () => {
   const initMediaPipe = async () => {
     if (!videoRef.current) throw new Error("Video element not found");
 
-    // Match version with index.html (0.10.18) to avoid "Failed to fetch"
     const wasmUrl = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm";
     
     setLoadingMsg("Downloading AI Model...");
@@ -404,12 +404,11 @@ const App: React.FC = () => {
 
     setLoadingMsg("Requesting Camera Access...");
     const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { width: 320, height: 240 } // Request low res for performance
+      video: { width: 320, height: 240 }
     });
     
     videoRef.current.srcObject = stream;
     
-    // Force play and wait
     await videoRef.current.play();
 
     return new Promise<void>((resolve) => {
@@ -429,14 +428,11 @@ const App: React.FC = () => {
 
   const predictWebcam = () => {
     if (!videoRef.current || !handLandmarkerRef.current) return;
-    
-    // Safety check if component unmounted
     if (!rendererRef.current) return;
 
     const startTimeMs = performance.now();
     const result = handLandmarkerRef.current.detectForVideo(videoRef.current, startTimeMs);
     
-    // Draw and Process
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -513,7 +509,6 @@ const App: React.FC = () => {
     else zoomTargetIndexRef.current = (zoomTargetIndexRef.current + 1) % photoMeshesRef.current.length;
   };
 
-  // --- Photo Handling ---
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const files = Array.from(e.target.files) as File[];
@@ -572,7 +567,6 @@ const App: React.FC = () => {
 
   const startExperience = async () => {
     setLoading(true);
-    // Explicitly resetting the start state to ensure re-entry is clean
     setStarted(false);
     
     try {
@@ -582,38 +576,30 @@ const App: React.FC = () => {
       animate();
     } catch (err: any) {
       console.error(err);
-      // Show full error in alert
       alert(`Initialization Failed: ${err.message || err}. Please ensure camera permissions are allowed and try reloading.`);
       setLoading(false);
       setLoadingMsg("Failed. Click to try again.");
     }
   };
 
-  // Mount Effect
   useEffect(() => {
     initThree();
-    // Initially false to show the Start button
     setLoading(false);
     
     return () => {
        if (reqIdRef.current) cancelAnimationFrame(reqIdRef.current);
-       // We DO NOT dispose renderer here to avoid Strict Mode issues
-       // Instead we rely on initThree to check for existing renderer
     };
   }, [initThree]);
 
   return (
     <div className="relative w-screen h-screen bg-black overflow-hidden font-sans text-white">
-      {/* Canvas Container */}
       <div ref={mountRef} className="absolute inset-0 z-0" />
 
-      {/* Video Overlay (Camera) */}
       <div className={`absolute top-5 right-5 w-40 h-32 z-10 border border-amber-400/30 rounded-lg overflow-hidden bg-black/50 transition-opacity duration-1000 ${started ? 'opacity-100' : 'opacity-0'}`}>
         <video ref={videoRef} className="w-full h-full object-cover opacity-80 scale-x-[-1]" playsInline muted />
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full scale-x-[-1]" width={320} height={240} />
       </div>
 
-      {/* UI Layer */}
       <div className={`absolute top-10 left-10 z-20 pointer-events-none transition-opacity duration-500 ${started ? 'opacity-100' : 'opacity-0'}`}>
         <h1 className="text-4xl font-extralight tracking-[0.2em] uppercase mb-4 text-transparent bg-clip-text bg-gradient-to-br from-white via-yellow-400 to-white drop-shadow-[0_0_20px_rgba(255,215,0,0.3)]">
           Jewel Christmas
@@ -650,7 +636,6 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Start Overlay */}
       {!started && (
         <div className="fixed inset-0 z-50 bg-[#050505] flex flex-col justify-center items-center transition-opacity duration-700">
           <h1 className="text-6xl font-thin tracking-widest mb-8 text-yellow-500">JEWEL TREE</h1>

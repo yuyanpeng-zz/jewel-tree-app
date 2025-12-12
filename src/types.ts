@@ -24,13 +24,14 @@ export interface DustData {
   speed: number;
 }
 
-// Fix: Use const object instead of enum to satisfy 'erasableSyntaxOnly'
+// 修复: 使用 const object 替代 enum，解决 'erasableSyntaxOnly' 错误
 export const AppState = {
   TREE: 'tree',
   SCATTER: 'scatter',
   ZOOM: 'zoom'
 } as const;
 
+// 导出由常量生成的类型
 export type AppState = (typeof AppState)[keyof typeof AppState];
 
 export interface HandPosition {

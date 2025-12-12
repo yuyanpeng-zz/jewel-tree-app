@@ -1,11 +1,16 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
+// @ts-ignore
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+// @ts-ignore
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+// @ts-ignore
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
+// @ts-ignore
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
-import { FilesetResolver, HandLandmarker, NormalizedLandmark } from '@mediapipe/tasks-vision';
-import { LogicData, AppState, HandPosition } from './types';
+// Fix: Use 'type' import for types
+import { FilesetResolver, HandLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
+import { LogicData, AppState, type HandPosition } from './types';
 import { Camera, RefreshCcw, Hand, Upload, Loader2, Info } from 'lucide-react';
 
 const CONFIG = {

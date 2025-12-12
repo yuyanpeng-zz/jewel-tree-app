@@ -24,11 +24,14 @@ export interface DustData {
   speed: number;
 }
 
-export enum AppState {
-  TREE = 'tree',
-  SCATTER = 'scatter',
-  ZOOM = 'zoom'
-}
+// Fix: Use const object instead of enum to satisfy 'erasableSyntaxOnly'
+export const AppState = {
+  TREE: 'tree',
+  SCATTER: 'scatter',
+  ZOOM: 'zoom'
+} as const;
+
+export type AppState = (typeof AppState)[keyof typeof AppState];
 
 export interface HandPosition {
   x: number;

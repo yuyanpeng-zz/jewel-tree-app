@@ -1,0 +1,7 @@
+{
+  "name": "Jewel Christmas Tree Ultra",
+  "description": "An interactive 3D Christmas tree experience controlled by hand gestures using MediaPipe and Three.js. Use gestures to transform the tree into a nebula, rotate it, or summon photos.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
